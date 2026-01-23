@@ -16,7 +16,6 @@ typedef struct {
 } zasm_node;
 
 typedef struct {
-  zasm_node base;
   size_t    stmt_count;
   zasm_node *stmt;
 } zasm_program;

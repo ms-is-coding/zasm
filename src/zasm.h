@@ -31,6 +31,8 @@ zasm_file zasm_input(const char *filename);
 zasm_file zasm_output(const char *filename, size_t size);
 void zasm_close(zasm_file file);
 
+int get_syscall(zasm_token tok);
+
 zasm_token *zasm_lex(zasm_file in, size_t *tok_count);
 zasm_program *zasm_parse(zasm_token *tokens, size_t tok_count);
 
