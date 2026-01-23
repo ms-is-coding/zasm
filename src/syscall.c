@@ -1,6 +1,5 @@
 #include "zasm.h"
 #include <syscall.h>
-#include <stdio.h>
 
 int get_syscall(zasm_token t) {
   const char *s = t.start;

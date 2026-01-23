@@ -11,22 +11,6 @@ typedef struct {
   int     error;
 } zasm_file;
 
-typedef enum {
-  ZASMT_IDENT,
-  ZASMT_NUM,
-  ZASMT_STR,
-  ZASMT_PUNCT,
-  ZASMT_EOF,
-} zasm_token_type;
-
-typedef struct {
-  zasm_token_type type;
-  int             line;
-  const char      *start;
-  size_t          len;
-  size_t          value;
-} zasm_token;
-
 zasm_file zasm_input(const char *filename);
 zasm_file zasm_output(const char *filename, size_t size);
 void zasm_close(zasm_file file);
@@ -35,5 +19,6 @@ int get_syscall(zasm_token tok);
 
 zasm_token *zasm_lex(zasm_file in, size_t *tok_count);
 zasm_program *zasm_parse(zasm_token *tokens, size_t tok_count);
+void zasm_codegen(zasm_program *prog, uint8_t *out_buf, size_t out_max);
 
 #endif // ZASM_H

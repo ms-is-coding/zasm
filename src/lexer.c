@@ -15,7 +15,7 @@ zasm_token *zasm_lex(zasm_file in, size_t *tok_count) {
 
   while (p < end) {
     // whitespace
-    if (isspace(*p)) { p++; continue; }
+    if (isspace(*p) && *p != '\n') { p++; continue; }
     // comments
     if (*p == '/' && *(p + 1) == '/') {
       while (p < end && *p != '\n') p++;
