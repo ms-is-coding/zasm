@@ -32,9 +32,16 @@ int get_reg_id(const char *name) {
 }
 
 void emit_mov_imm(zasm_emitter *e, int reg, uint64_t val) {
-  emit_byte(e, 0x48);
-  emit_byte(e, 0xB8 + (reg & 7));
-  emit_bytes(e, (uint8_t*)&val, 8);
+  if (val < 256) {
+    if (reg == 7)
+      emit_byte(e, 0x40);
+    emit_byte(e, 0xb0 + (reg & 7));
+    emit_byte(e, val);
+  } else {
+    emit_byte(e, 0x48);
+    emit_byte(e, 0xb8 + (reg & 7));
+    emit_bytes(e, (uint8_t*)&val, 8);
+  }
 }
 
 void emit_syscall_macro(zasm_emitter *e, zasm_syscall *sc) {
@@ -42,15 +49,21 @@ void emit_syscall_macro(zasm_emitter *e, zasm_syscall *sc) {
 
   for (int i = 0; i < sc->arg_count && i < 6; i++) {
     zasm_operand op = sc->args[i];
-    int target_reg = get_reg_id(sys_regs[i]);
+    int dst_reg = get_reg_id(sys_regs[i]);
 
     if (op.type == ZASMO_IMM) {
-      emit_mov_imm(e, target_reg, op.imm_val);
+      emit_mov_imm(e, dst_reg, op.imm_val);
     } else if (op.type == ZASMO_REG) {
+      int src_reg = get_reg_id(op.reg_name);
+
+      emit_byte(e, 0x48);
+      emit_byte(e, 0x89);
+      emit_byte(e, 0xC0 + (src_reg << 3) + dst_reg);
+    } else if (op.type == ZASMO_MEM) {
       int src_reg = get_reg_id(op.reg_name);
       emit_byte(e, 0x48);
       emit_byte(e, 0x89);
-      emit_byte(e, 0xC0 + (src_reg << 3) + target_reg);
+      emit_byte(e, 0xA0 + (src_reg << 4) | dst_reg);
     }
   }
 
@@ -61,7 +74,6 @@ void emit_syscall_macro(zasm_emitter *e, zasm_syscall *sc) {
 }
 
 void emit_instruction(zasm_emitter *e, zasm_instr *ins) {
-
   if (strcmp(ins->mnemonic, "syscall") == 0) {
     emit_byte(e, 0x0F);
     emit_byte(e, 0x05);
@@ -70,6 +82,23 @@ void emit_instruction(zasm_emitter *e, zasm_instr *ins) {
     if (ins->op_count == 2 && strcmp(ins->ops[0].reg_name, "edi") == 0) {
       emit_byte(e, 0x31);
       emit_byte(e, 0xFF);
+    }
+  }
+  else if (strcmp(ins->mnemonic, "mov") == 0) {
+    if (ins->op_count == 2 && ins->ops[1].type == ZASMO_IMM) {
+      emit_mov_imm(e, get_reg_id(ins->ops[0].reg_name), ins->ops[1].imm_val);
+    }
+  }
+  else if (strcmp(ins->mnemonic, "pushstr") == 0) {
+    if (ins->op_count == 1 && ins->ops[0].type == ZASMO_STR) {
+      char *s =ins->ops[0].str_val;
+      int temp_reg = get_reg_id("rsi");
+      ssize_t len = strlen(s) & ~7; // align to 8-byte boundary
+      while (len >= 0) {
+        emit_mov_imm(e, temp_reg, *(uint64_t *)(s + len));
+        emit_byte(e, 0x50 + temp_reg);
+        len -= 8;
+      }
     }
   }
 }
@@ -82,6 +111,7 @@ void zasm_codegen(zasm_program *prog, uint8_t *out_buf, size_t out_max) {
     .vaddr_start = 0x10000
   };
 
+  emit_byte(&e, 0x90);
   for (size_t i = 0; i < prog->node_count; ++i) {
     zasm_node *node = prog->nodes[i];
 

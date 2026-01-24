@@ -2,7 +2,6 @@
 #define ZASM_AST_H
 
 #include <stddef.h>
-#include "token.h"
 
 typedef enum {
   ZASMN_NONE,
@@ -17,18 +16,20 @@ typedef enum {
   ZASMO_REG,
   ZASMO_IMM,
   ZASMO_MEM,
+  ZASMO_STR,
   ZASMO_LABEL,
 } zasm_op_type;
 
 typedef struct {
   zasm_op_type type;
   union {
-    char *reg_name;
-    long imm_val;
-    char *label_ref;
+    char  *reg_name;
+    long  imm_val;
+    char  *label_ref;
+    char  *str_val;
     struct {
-      char *base_reg;
-      int offset;
+      char  *base_reg;
+      int   offset;
     } mem;
   };
 } zasm_operand;

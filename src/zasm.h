@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "ast.h"
+#include "token.h"
 
 typedef struct {
   uint8_t *data;

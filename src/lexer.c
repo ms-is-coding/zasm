@@ -2,6 +2,35 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+char* unescape_string(const char* src, int len) {
+  char* dest = malloc(len + 1);
+  int i = 0;
+  int j = 0;
+
+  while (i < len) {
+    if (src[i] == '\\' && i + 1 < len) {
+      i++;
+      switch (src[i]) {
+        case 'n':  dest[j++] = '\n'; break;
+        case 't':  dest[j++] = '\t'; break;
+        case 'r':  dest[j++] = '\r'; break;
+        case '\\': dest[j++] = '\\'; break;
+        case '\"': dest[j++] = '\"'; break;
+        case '0':  dest[j++] = '\0'; break;
+        default:
+          dest[j++] = src[i];
+          break;
+      }
+    } else {
+      dest[j++] = src[i];
+    }
+    i++;
+  }
+
+  dest[j] = '\0';
+  return dest;
+}
+
 zasm_token *zasm_lex(zasm_file in, size_t *tok_count) {
   size_t cap = 128;
   size_t count = 0;
@@ -31,9 +60,16 @@ zasm_token *zasm_lex(zasm_file in, size_t *tok_count) {
     if (*p == '"') {
       t->type = ZASMT_STR;
       t->start = ++p;
-      while (p < end && *p != '"') p++;
+      while (p < end && *p != '"') {
+        if (*p == '\\') {
+          p++;
+          if (p >= end) break;
+        }
+        p++;
+      }
       t->len = p - t->start;
-      p++;
+      t->start = unescape_string(t->start, t->len);
+      if (p < end) p++;
     }
     else if (isdigit(*p)) {
       t->type =  ZASMT_NUM;

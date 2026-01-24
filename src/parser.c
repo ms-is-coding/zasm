@@ -35,8 +35,10 @@ static zasm_operand parse_operand(zasm_token *tokens, size_t *index, size_t coun
     op.type = ZASMO_REG;
     op.reg_name = strndup(t.start, t.len);
   }
-  else if (t.type == ZASMT_STR)
-    ;
+  else if (t.type == ZASMT_STR) {
+    op.type = ZASMO_STR;
+    op.str_val = strndup(t.start, t.len);
+  }
   else {
     report_error(line, "Invalid operand", t);
   }
@@ -145,7 +147,7 @@ zasm_program *zasm_parse(zasm_token *tokens, size_t count) {
           ins->ops[ins->op_count++] = parse_operand(tokens, &i, count, current_line);
         }
         i++;
-        if (i < count && tokens[i].type == ZASMT_PUNCT && *tokens[i].start == '.') i++;
+        if (i < count && tokens[i].type == ZASMT_PUNCT && *tokens[i].start == ',') i++;
         else break;
       }
       prog_add_node(prog, (zasm_node *)ins);
