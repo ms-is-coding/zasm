@@ -1,3 +1,4 @@
+#include "token.h"
 #include "zasm.h"
 #include <stdlib.h>
 #include <ctype.h>
@@ -41,6 +42,7 @@ zasm_token *zasm_lex(zasm_file in, size_t *tok_count) {
   }
   char *p = (char *)in.data;
   char *end = p + in.size;
+  int line = 0;
 
   while (p < end) {
     // whitespace
@@ -57,6 +59,8 @@ zasm_token *zasm_lex(zasm_file in, size_t *tok_count) {
 
     zasm_token *t = &tokens[count++];
 
+    t->line = line;
+    t->value = 0;
     if (*p == '"') {
       t->type = ZASMT_STR;
       t->start = ++p;
@@ -68,18 +72,27 @@ zasm_token *zasm_lex(zasm_file in, size_t *tok_count) {
         p++;
       }
       t->len = p - t->start;
-      t->start = unescape_string(t->start, t->len);
+      // t->start = unescape_string(t->start, t->len);
       if (p < end) p++;
     }
     else if (isdigit(*p)) {
       t->type =  ZASMT_NUM;
+      t->start = p;
       t->value = strtol(p, &p, 0);
+      t->len = p - t->start;
     }
     else if (isalpha(*p) || *p == '_') {
       t->type = ZASMT_IDENT;
       t->start = p;
       while (p < end && (isalnum(*p) || *p == '_')) p++;
       t->len = p - t->start;
+    }
+    else if (*p == '\n') {
+      t->type = ZASMT_NEWL;
+      t->start = p;
+      t->len = 0;
+      line++;
+      p++;
     }
     else {
       t->type = ZASMT_PUNCT;
@@ -91,6 +104,9 @@ zasm_token *zasm_lex(zasm_file in, size_t *tok_count) {
   }
 
   tokens[count].type = ZASMT_EOF;
+  tokens[count].start = p;
+  tokens[count].line = line;
+  tokens[count].len = 0;
   *tok_count = count;
   return tokens;
 

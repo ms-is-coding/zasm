@@ -5,13 +5,12 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-void report_error(int line, const char *msg, zasm_token t) {
-  fprintf(stderr, "zasm error (line %d): %s '%.*s'\n",
-          line, msg, (int)t.len, t.start);
-  exit(1);
-}
-
-static zasm_operand parse_operand(zasm_token *tokens, size_t *index, size_t count, int line) {
+static zasm_operand parse_operand(
+  zasm_file  in,
+  zasm_token *tokens,
+  size_t     *index,
+  size_t     count
+) {
   zasm_operand op = {0};
   zasm_token t = tokens[*index];
 
@@ -23,13 +22,14 @@ static zasm_operand parse_operand(zasm_token *tokens, size_t *index, size_t coun
     op.type = ZASMO_MEM;
     (*index)++;
     if (*index >= count || tokens[*index].type != ZASMT_IDENT)
-      report_error(line, "Expected register inside brackets", tokens[*index]);
+      zasm_error(in, tokens[*index], "Expected register inside brackets");
     op.mem.base_reg = strndup(tokens[*index].start, tokens[*index].len);
 
     while (*index < count && !(tokens[*index].type == ZASMT_PUNCT && *tokens[*index].start == ']')) {
       (*index)++;
     }
-    if (*index >= count) report_error(line, "Unclosed memory operand", t);
+    if (*index >= count)
+      zasm_error(in, t, "Unclosed memory operand");
   } 
   else if (t.type == ZASMT_IDENT) {
     op.type = ZASMO_REG;
@@ -40,7 +40,7 @@ static zasm_operand parse_operand(zasm_token *tokens, size_t *index, size_t coun
     op.str_val = strndup(t.start, t.len);
   }
   else {
-    report_error(line, "Invalid operand", t);
+    zasm_error(in, t, "Invalid operand");
   }
 
   return op;
@@ -68,7 +68,7 @@ zasm_node* create_label_node(zasm_token t, int line) {
   return (zasm_node*)node;
 }
 
-zasm_program *zasm_parse(zasm_token *tokens, size_t count) {
+zasm_program *zasm_parse(zasm_file in, zasm_token *tokens, size_t count) {
   size_t i = 0;
   int current_line = 1;
 
@@ -80,7 +80,7 @@ zasm_program *zasm_parse(zasm_token *tokens, size_t count) {
   while (i < count && tokens[i].type != ZASMT_EOF) {
     zasm_token t = tokens[i];
 
-    if (t.type == ZASMT_PUNCT && *t.start == '\n') {
+    if (t.type == ZASMT_NEWL) {
       current_line++;
       i++;
       continue;
@@ -97,25 +97,25 @@ zasm_program *zasm_parse(zasm_token *tokens, size_t count) {
     if (t.type == ZASMT_IDENT && strncmp(t.start, "syscall", t.len) == 0) {
       i++; 
       if (tokens[i].type != ZASMT_IDENT) 
-        report_error(current_line, "Expected syscall name", tokens[i]);
+        zasm_error(in, tokens[i], "Expected syscall name");
 
       zasm_token name_tok = tokens[i++];
       int sc_num = get_syscall(name_tok);
 
       if (sc_num == -1)
-        report_error(current_line, "Unknown syscall", name_tok);
+        zasm_error(in, name_tok, "Unknown syscall");
 
       zasm_syscall *sc_node = (zasm_syscall*)create_syscall_node(sc_num, current_line);
 
       if (tokens[i].type != ZASMT_PUNCT || *tokens[i].start != '(')
-        report_error(current_line, "Expected '('", tokens[i]);
+        zasm_error(in, tokens[i], "Expected '('");
       i++;
 
       while (i < count && !(tokens[i].type == ZASMT_PUNCT && *tokens[i].start == ')')) {
         if (sc_node->arg_count < 6) {
-          sc_node->args[sc_node->arg_count++] = parse_operand(tokens, &i, count, current_line);
+          sc_node->args[sc_node->arg_count++] = parse_operand(in, tokens, &i, count);
         } else {
-          report_error(current_line, "Too many arguments for syscall", tokens[i]);
+          zasm_error(in, tokens[i], "Too many arguments for syscall");
         }
 
         i++;
@@ -125,7 +125,7 @@ zasm_program *zasm_parse(zasm_token *tokens, size_t count) {
       }
 
       if (tokens[i].type != ZASMT_PUNCT || *tokens[i].start != ')')
-        report_error(current_line, "Expected ')' to close syscall", tokens[i]);
+        zasm_error(in, tokens[i], "Expected ')' to close syscall");
 
       i++;
       prog_add_node(prog, (zasm_node*)sc_node);
@@ -141,10 +141,10 @@ zasm_program *zasm_parse(zasm_token *tokens, size_t count) {
       i++;
 
       while (i < count && tokens[i].type != ZASMT_EOF) {
-        if (tokens[i].type == ZASMT_PUNCT && *tokens[i].start == '\n') break;
+        if (tokens[i].type == ZASMT_NEWL) break;
 
         if (ins->op_count < 4) {
-          ins->ops[ins->op_count++] = parse_operand(tokens, &i, count, current_line);
+          ins->ops[ins->op_count++] = parse_operand(in, tokens, &i, count);
         }
         i++;
         if (i < count && tokens[i].type == ZASMT_PUNCT && *tokens[i].start == ',') i++;

@@ -7,7 +7,7 @@
 
 zasm_file zasm_input(const char *filename) {
   int fd = open(filename, O_RDONLY);
-  zasm_file f;
+  zasm_file f = { .name = filename };
   if (fd < 0) {
     perror("open");
     f.error = 1;
@@ -32,7 +32,7 @@ zasm_file zasm_input(const char *filename) {
 
 zasm_file zasm_output(const char *filename, size_t size) {
   int fd = open(filename, O_CREAT | O_TRUNC | O_RDWR, 0755);
-  zasm_file f;
+  zasm_file f = { .name = filename };
   if (fd < 0) {
     perror("open");
     f.error = 1;

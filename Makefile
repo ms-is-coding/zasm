@@ -4,7 +4,7 @@ CC = clang
 CFLAGS = -g3 -Wall -Wextra -std=gnu23
 
 SRC = $(addprefix src/, main.c io.c lexer.c parser.c \
-			codegen.c syscall.c print.c)
+			codegen.c syscall.c print.c error.c)
 OBJ = $(patsubst src/%.c, obj/%.o, $(SRC))
 DEP = $(OBJ:%.o=%.d)
 

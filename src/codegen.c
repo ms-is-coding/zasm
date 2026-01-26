@@ -111,7 +111,6 @@ void zasm_codegen(zasm_program *prog, uint8_t *out_buf, size_t out_max) {
     .vaddr_start = 0x10000
   };
 
-  emit_byte(&e, 0x90);
   for (size_t i = 0; i < prog->node_count; ++i) {
     zasm_node *node = prog->nodes[i];
 

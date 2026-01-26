@@ -8,6 +8,7 @@ typedef enum {
   ZASMT_NUM,
   ZASMT_STR,
   ZASMT_PUNCT,
+  ZASMT_NEWL,
   ZASMT_EOF,
 } zasm_token_type;
 

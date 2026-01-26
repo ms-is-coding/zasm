@@ -11,8 +11,8 @@
 void zasm_print_ast(zasm_program *p);
 
 int main(int argc, char **argv) {
-  if (argc != 2) {
-    fprintf(stderr, "Usage: %s <file.zasm>\n", argv[0]);
+  if (argc < 2) {
+    fprintf(stderr, "error: no input files\n");
     return 1;
   }
 
@@ -81,7 +81,8 @@ int main(int argc, char **argv) {
 
   size_t tok_count;
   zasm_token *tokens = zasm_lex(in, &tok_count);
-  zasm_program *p = zasm_parse(tokens, tok_count);
+
+  zasm_program *p = zasm_parse(in, tokens, tok_count);
 
   zasm_print_ast(p);
 
