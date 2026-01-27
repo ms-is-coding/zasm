@@ -1,0 +1,38 @@
+## Syntax highlighting for Zasm
+syntax zasm "\.zasm$"
+
+## Comments
+color cyan "//.*"
+color cyan start="/\*" end="\*/"
+color brightwhite,cyan "TODO|FIXME|XXX"
+
+## Numbers (Hex, Binary, Decimal)
+color magenta "\<0x[0-9a-fA-F]+\>"
+color magenta "\<0b[01]+\>"
+color magenta "\<[0-9]+(\.[0-9]+)?\>"
+
+## Strings
+color yellow ""(\\.|[^"])*""
+color yellow "'(\\.|[^'])*'"
+
+## Registers
+color red "\<(rax|rcx|rdx|rbx|rsp|rbp|rsi|rdi|rip|r[8-9]|r1[0-5])\>"
+color red "\<(eax|ecx|edx|ebx|esp|ebp|esi|edi|r[8-9]d|r1[0-5]d)\>"
+color red "\<(ax|cx|dx|bx|sp|bp|si|di|r[8-9]w|r1[0-5]w)\>"
+color red "\<(al|cl|dl|bl|spl|bpl|sil|dil|ah|ch|dh|bh|r[8-9]b|r1[0-5]b)\>"
+
+## Instructions and Keywords
+color green "\<(mov|lea|push|pop|add|sub|mul|div|inc|dec|neg|cmp|ret|call|jmp|je|jne|jg|jge|jl|jle|jz|jnz|syscall|pushstr)\>"
+color brightgreen "\<(section|global|extern|entry)\>"
+color yellow "\<(db|dw|dd|dq|dt|byte|word|dword|qword|ptr)\>"
+
+## Functions (Word followed by parenthesis)
+color blue "[A-Za-z_][A-Za-z0-9_]*\s*\("
+
+## Labels (Word followed by colon)
+color brightmagenta "[A-Za-z_.?][A-Za-z0-9_.?]*:"
+
+## Operators and Delimiters
+color yellow "[.:;,+*|=!<>/-]"
+color yellow "\["
+color yellow "\]"

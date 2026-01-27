@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 VIM_DIR="$HOME/.vim"
 mkdir -p "$VIM_DIR/syntax" "$VIM_DIR/ftdetect" "$VIM_DIR/ftplugin"
 
